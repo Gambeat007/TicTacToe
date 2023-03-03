@@ -26,3 +26,16 @@ export const Square = styled.div`
 export const Marker = styled.p`
   font-size: 68px;
 `;
+
+export const ButtonRow = styled.div`
+  display: flex;
+  width: 150px;
+  justify-content: space-between;
+`;
+
+export const InnerContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30px;
+`;
