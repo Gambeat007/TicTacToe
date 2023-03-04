@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   DIMENSIONS,
   GAME_STATES,
@@ -23,6 +23,7 @@ export default function TicTacToe() {
     person: null,
     computer: null,
   });
+  const [nextMove, setNextMove] = useState<null | number>(null);
 
   const move = (index: number, player: number | null) => {
     if (player !== null) {
@@ -34,24 +35,40 @@ export default function TicTacToe() {
     }
   };
 
-  const computerMove = () => {
+  const personMove = (index: number) => {
+    if (!grid[index] && nextMove === players.person) {
+      move(index, players.person);
+      setNextMove(players.computer);
+    }
+  };
+
+  const computerMove = useCallback(() => {
     let index = generateRandomInt(0, 8);
     while (grid[index]) {
       index = generateRandomInt(0, 8);
     }
     move(index, players.computer);
-  };
+    setNextMove(players.person)
+  }, [move, grid, players]); 
 
-  const personMove = (index: number) => {
-    if (!grid[index]) {
-      move(index, players.person);
-      computerMove();
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+    if (
+      nextMove !== null &&
+      nextMove === players.computer &&
+      gameState !== GAME_STATES.gameOver
+    ) {
+      timeout = setTimeout(() => {
+        computerMove();
+      }, 800);
     }
-  };
+    return () => timeout && clearTimeout(timeout);
+  }, [nextMove, computerMove, players.computer, gameState]);
 
   const choosePlayer = (option: number) => {
     setPlayers({ person: option, computer: switchPlayer(option) });
     setGameState(GAME_STATES.inProgress);
+    setNextMove(PLAYER_X);
   };
 
   return gameState === GAME_STATES.notStartedYet ? (
