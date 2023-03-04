@@ -16,7 +16,7 @@ export default class Board {
     return squares;
   };
 
-  isEmpty = (grid = this.grid) => {
+  isGridEmpty = (grid = this.grid) => {
     return this.retrieveEmptySquares(grid).length === DIMENSIONS ** 2;
   };
 

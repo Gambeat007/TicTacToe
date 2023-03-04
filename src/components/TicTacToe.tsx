@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { generateRandomInt, switchPlayer } from "../utils/utils";
 import {
   DIMENSIONS,
   DRAW,
@@ -6,7 +7,6 @@ import {
   PLAYER_O,
   PLAYER_X,
 } from "../constants/constants";
-import { generateRandomInt, switchPlayer } from "../utils/utils";
 import Board from "./Board";
 import {
   Container,
@@ -22,13 +22,13 @@ const board = new Board();
 export default function TicTacToe() {
   const [grid, setGrid] = useState(emptyGrid);
   const [gameState, setGameState] = useState(GAME_STATES.notStartedYet);
+  const [nextMove, setNextMove] = useState<null | number>(null);
+  const [winner, setWinner] = useState<null | string>(null);
   const [players, setPlayers] = useState<Record<string, number | null>>({
     person: null,
     computer: null,
   });
-  const [nextMove, setNextMove] = useState<null | number>(null);
-  const [winner, setWinner] = useState<null | string>(null);
-
+  
   const move = (index: number, player: number | null) => {
     if (player !== null) {
       setGrid((grid) => {
@@ -55,6 +55,17 @@ export default function TicTacToe() {
     setNextMove(players.person);
   }, [move, grid, players]);
 
+  const choosePlayer = (option: number) => {
+    setPlayers({ person: option, computer: switchPlayer(option) });
+    setGameState(GAME_STATES.inProgress);
+    setNextMove(PLAYER_X);
+  };
+
+  const startNewGame = () => {
+    setGameState(GAME_STATES.notStartedYet);
+    setGrid(emptyGrid);
+  };
+
   useEffect(() => {
     let timeout: NodeJS.Timeout;
     if (
@@ -75,14 +86,14 @@ export default function TicTacToe() {
       let winnerStr = "";
       switch (winner) {
         case PLAYER_X:
-          winnerStr = "Player X wins!";
+          winnerStr = "X wins!";
           break;
         case PLAYER_O:
-          winnerStr = "Player O wins!";
+          winnerStr = "O wins!";
           break;
         case DRAW:
         default:
-          winnerStr = "It's a draw";
+          winnerStr = "Draw";
       }
       setGameState(GAME_STATES.gameOver);
       setWinner(winnerStr);
@@ -92,17 +103,6 @@ export default function TicTacToe() {
       declareWinner(boardWinner);
     }
   }, [gameState, grid, nextMove]);
-
-  const choosePlayer = (option: number) => {
-    setPlayers({ person: option, computer: switchPlayer(option) });
-    setGameState(GAME_STATES.inProgress);
-    setNextMove(PLAYER_X);
-  };
-
-  const startNewGame = () => {
-    setGameState(GAME_STATES.notStartedYet);
-    setGrid(emptyGrid);
-  };
 
   switch (gameState) {
     case GAME_STATES.notStartedYet:
