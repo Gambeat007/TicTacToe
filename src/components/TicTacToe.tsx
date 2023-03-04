@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   DIMENSIONS,
+  DRAW,
   GAME_STATES,
   PLAYER_O,
   PLAYER_X,
 } from "../constants/constants";
 import { generateRandomInt, switchPlayer } from "../utils/utils";
+import Board from "./Board";
 import {
   Container,
   Square,
@@ -15,6 +17,7 @@ import {
 } from "./TicTacToe.style";
 
 const emptyGrid = new Array(DIMENSIONS ** 2).fill(null);
+const board = new Board();
 
 export default function TicTacToe() {
   const [grid, setGrid] = useState(emptyGrid);
@@ -24,6 +27,7 @@ export default function TicTacToe() {
     computer: null,
   });
   const [nextMove, setNextMove] = useState<null | number>(null);
+  const [winner, setWinner] = useState<null | string>(null);
 
   const move = (index: number, player: number | null) => {
     if (player !== null) {
@@ -48,8 +52,8 @@ export default function TicTacToe() {
       index = generateRandomInt(0, 8);
     }
     move(index, players.computer);
-    setNextMove(players.person)
-  }, [move, grid, players]); 
+    setNextMove(players.person);
+  }, [move, grid, players]);
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
@@ -65,34 +69,79 @@ export default function TicTacToe() {
     return () => timeout && clearTimeout(timeout);
   }, [nextMove, computerMove, players.computer, gameState]);
 
+  useEffect(() => {
+    const boardWinner = board.calculateWinner(grid);
+    const declareWinner = (winner: number) => {
+      let winnerStr = "";
+      switch (winner) {
+        case PLAYER_X:
+          winnerStr = "Player X wins!";
+          break;
+        case PLAYER_O:
+          winnerStr = "Player O wins!";
+          break;
+        case DRAW:
+        default:
+          winnerStr = "It's a draw";
+      }
+      setGameState(GAME_STATES.gameOver);
+      setWinner(winnerStr);
+    };
+
+    if (boardWinner !== null && gameState !== GAME_STATES.gameOver) {
+      declareWinner(boardWinner);
+    }
+  }, [gameState, grid, nextMove]);
+
   const choosePlayer = (option: number) => {
     setPlayers({ person: option, computer: switchPlayer(option) });
     setGameState(GAME_STATES.inProgress);
     setNextMove(PLAYER_X);
   };
 
-  return gameState === GAME_STATES.notStartedYet ? (
-    <div>
-      <InnerContainer>
-        <p>Choose your player</p>
-        <ButtonRow>
-          <button onClick={() => choosePlayer(PLAYER_X)}>X</button>
-          <p>or</p>
-          <button onClick={() => choosePlayer(PLAYER_O)}>O</button>
-        </ButtonRow>
-      </InnerContainer>
-    </div>
-  ) : (
-    <Container dims={DIMENSIONS}>
-      {grid.map((value, index) => {
-        const isActive = value !== null;
+  const startNewGame = () => {
+    setGameState(GAME_STATES.notStartedYet);
+    setGrid(emptyGrid);
+  };
 
-        return (
-          <Square key={index} onClick={() => personMove(index)}>
-            {isActive && <Marker>{value === PLAYER_X ? "X" : "O"}</Marker>}
-          </Square>
-        );
-      })}
-    </Container>
-  );
+  switch (gameState) {
+    case GAME_STATES.notStartedYet:
+    default:
+      return (
+        <div>
+          <InnerContainer>
+            <p>Choose your player</p>
+            <ButtonRow>
+              <button onClick={() => choosePlayer(PLAYER_X)}>X</button>
+              <p>or</p>
+              <button onClick={() => choosePlayer(PLAYER_O)}>O</button>
+            </ButtonRow>
+          </InnerContainer>
+        </div>
+      );
+    case GAME_STATES.inProgress:
+      return (
+        <Container dims={DIMENSIONS}>
+          {grid.map((value, index) => {
+            const isActive = value !== null;
+  
+            return (
+              <Square
+                key={index}
+                onClick={() => personMove(index)}
+              >
+                {isActive && <Marker>{value === PLAYER_X ? "X" : "O"}</Marker>}
+              </Square>
+            );
+          })}
+        </Container>
+      );
+    case GAME_STATES.gameOver:
+      return (
+        <div>
+          <p>{winner}</p>
+          <button onClick={startNewGame}>Start over</button>
+        </div>
+      );
+  }
 }
